@@ -31,25 +31,23 @@ namespace GrxArrayTool
                 {
                     // Read input file
                     string fileExtension = Path.GetExtension(filePath);
-                    if (fileExtension.Equals(".grxla.json", StringComparison.OrdinalIgnoreCase))
+                    if (fileExtension.Equals(".json", StringComparison.OrdinalIgnoreCase))
                     {
                         GrxArrayFile file = ReadFromJson(filePath);
-                        WriteToBinary(file, Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(filePath)) + ".grxla");
-                    }
-                    else if (fileExtension.Equals(".grxoc.json", StringComparison.OrdinalIgnoreCase))
-                    {
-                        GrxArrayFile file = ReadFromJson(filePath);
-                        WriteToBinary(file, Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(filePath)) + ".grxoc");
+                        if (file.Occluders.Count > 0)
+                            WriteToBinary(file, Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(filePath)) + ".grxoc");
+                        else
+                            WriteToBinary(file, Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(filePath)) + ".grxla");
                     }
                     else if (fileExtension.Equals(".grxla", StringComparison.OrdinalIgnoreCase))
                     {
                         GrxArrayFile file = ReadFromBinary(filePath, hashManager);
-                        File.WriteAllText(Path.GetFileNameWithoutExtension(filePath) + ".grxla.json", JsonConvert.SerializeObject(file.Lights, Formatting.Indented));
+                        File.WriteAllText(Path.GetFileNameWithoutExtension(filePath) + ".grxla.json", JsonConvert.SerializeObject(file, Formatting.Indented));
                     }
                     else if (fileExtension.Equals(".grxoc", StringComparison.OrdinalIgnoreCase))
                     {
                         GrxArrayFile file = ReadFromBinary(filePath, hashManager);
-                        File.WriteAllText(Path.GetFileNameWithoutExtension(filePath) + ".grxoc.json", JsonConvert.SerializeObject(file.Lights, Formatting.Indented));
+                        File.WriteAllText(Path.GetFileNameWithoutExtension(filePath) + ".grxoc.json", JsonConvert.SerializeObject(file, Formatting.Indented));
                     }
                     else
                     {
@@ -59,7 +57,7 @@ namespace GrxArrayTool
             }
 
             // Write hash matches output
-            WriteHashMatchesToFile(DefaultHashMatchOutputFileName, hashManager);
+            //WriteHashMatchesToFile(DefaultHashMatchOutputFileName, hashManager);
         }
 
         public static void WriteToBinary(GrxArrayFile file, string path)

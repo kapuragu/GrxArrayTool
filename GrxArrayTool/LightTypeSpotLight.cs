@@ -1,70 +1,51 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace GrxArrayTool
 {
-    public class LightTypeSpotLight : ILight
+    public class LightTypeSpotLight
     {
-        public uint EntryType { get; set; }
-        public uint EntryLength { get; set; }
-        public ulong LightNameHash { get; set; }
-        public bool HasString { get; set; }
+        public ulong HashName { get; set; }
+        public string StringName { get; set; }
         public uint vals4_2 { get; set; } // Different in GZ
         public uint vals4_3 { get; set; }
         public uint vals4_4 { get; set; } // Sometimes different in GZ?
-        public bool HasLightArea { get; set; }
         public Vector3 Translation { get; set; }
         public Vector3 ReachPoint { get; set; }
         public Vector4 Rotation { get; set; }
-        public Half OuterRange { get; set; }
-        public Half InnerRange { get; set; }
-        public Half UmbraAngle { get; set; }
-        public Half PenumbraAngle { get; set; }
-        public Half AttenuationExponent { get; set; }
-        public Half vals14_6 { get; set; }
+        public float OuterRange { get; set; }
+        public float InnerRange { get; set; }
+        public float UmbraAngle { get; set; }
+        public float PenumbraAngle { get; set; }
+        public float AttenuationExponent { get; set; }
+        public float vals14_6 { get; set; }
         public HalfVector4 Color { get; set; }
-        public Half Temperature { get; set; }
-        public Half ColorDeflection { get; set; } // inconsistency with pointlight having it as a float makes me doubt this is colordeflection too
+        public float Temperature { get; set; }
+        public float ColorDeflection { get; set; } // inconsistency with pointlight having it as a float makes me doubt this is colordeflection too
         public float Lumen { get; set; }
-        public Half vals10 { get; set; }
-        public Half ShadowUmbraAngle { get; set; }
-        public Half ShadowPenumbraAngle { get; set; }
-        public Half ShadowAttenuationExponent { get; set; }
-        public Half Dimmer { get; set; }
-        public Half ShadowBias { get; set; }
-        public Half ViewBias { get; set; }
-        public Half vals11_1 { get; set; }
-        public Half vals11_2 { get; set; }
-        public Half vals11_3 { get; set; }
+        public float vals10 { get; set; }
+        public float ShadowUmbraAngle { get; set; }
+        public float ShadowPenumbraAngle { get; set; }
+        public float ShadowAttenuationExponent { get; set; }
+        public float Dimmer { get; set; }
+        public float ShadowBias { get; set; }
+        public float ViewBias { get; set; }
+        public float vals11_1 { get; set; }
+        public float vals11_2 { get; set; }
+        public float vals11_3 { get; set; }
         public uint LodRadiusLevel { get; set; }
         public uint vals12_2 { get; set; }
-        public bool HasIrradiationPoint { get; set; }
-        public string LightName { get; set; }
-        public Vector3 LightAreaScale { get; set; }
-        public Vector4 LightAreaRotation { get; set; }
-        public Vector3 LightAreaTranslation { get; set; }
-        public Vector3 IrradiationPointScale { get; set; }
-        public Vector4 IrradiationPointRotation { get; set; }
-        public Vector3 IrradiationPointTranslation { get; set; }
+        public List<ExtraTransform> LightArea = new List<ExtraTransform>();
+        public List<ExtraTransform> IrradiationPoint = new List<ExtraTransform>();
         public void Read(BinaryReader reader, Dictionary<uint, string> hashLookupTable, HashIdentifiedDelegate hashIdentifiedCallback)
         {
-            LightNameHash = reader.ReadUInt64(); //Doesn't look like the PathCode64 of the .fox2?
+            HashName = reader.ReadUInt64(); //Doesn't look like the PathCode64 of the .fox2?
             uint offsetToString = reader.ReadUInt32();
-            if (offsetToString > 0)
-            {
-                HasString = true;
-            }
             vals4_2 = reader.ReadUInt32();
             vals4_3 = reader.ReadUInt32();
             vals4_4 = reader.ReadUInt32();
-
             uint offsetToLightArea = reader.ReadUInt32();
-            if (offsetToLightArea > 0)
-            {
-                HasLightArea = true;
-            }
 
             Translation = new Vector3();
             Translation.Read(reader);
@@ -86,11 +67,8 @@ namespace GrxArrayTool
             Color.Read(reader);
 
             Temperature = Half.ToHalf(reader.ReadUInt16());
-
             ColorDeflection = Half.ToHalf(reader.ReadUInt16());
-
             Lumen = reader.ReadSingle();
-
             vals10 = Half.ToHalf(reader.ReadUInt16());
             ShadowUmbraAngle = Half.ToHalf(reader.ReadUInt16());
             ShadowPenumbraAngle = Half.ToHalf(reader.ReadUInt16());
@@ -101,67 +79,160 @@ namespace GrxArrayTool
             vals11_1 = Half.ToHalf(reader.ReadUInt16());
             vals11_2 = Half.ToHalf(reader.ReadUInt16());
             vals11_3 = Half.ToHalf(reader.ReadUInt16());
-
             LodRadiusLevel = reader.ReadUInt32();
             vals12_2 = reader.ReadUInt32();
 
             uint offsetToIrraditationTransform = reader.ReadUInt32();
-            if (offsetToIrraditationTransform > 0)
-            {
-                HasIrradiationPoint = true;
-            }
 
-            if (HasString)
+            StringName = "";
+            //PS3 files don't use strings for light objects (however there's no way to tell byte sex apart so tool won't parse them anyway)
+            if (offsetToString > 0)
             {
-                LightName = reader.ReadCString();
-
+                StringName = reader.ReadCString();
                 if (reader.BaseStream.Position % 0x4 != 0)
                     reader.BaseStream.Position += 0x4 - reader.BaseStream.Position % 0x4;
             }
 
-            if (HasLightArea)
-            {
-                LightAreaScale = new Vector3();
-                LightAreaScale.Read(reader);
-                LightAreaRotation = new Vector4();
-                LightAreaRotation.Read(reader);
-                LightAreaTranslation = new Vector3();
-                LightAreaTranslation.Read(reader);
-            }
+            Console.WriteLine($"Spotlight entry NameHash={HashName} LightName='{StringName}'");
+            Console.WriteLine($"    vals4_2={vals4_2} vals4_3={vals4_3} vals4_4={vals4_4}");
+            Console.WriteLine($"    Translation X={Translation.X} Y={Translation.Y} Z={Translation.Z}");
+            Console.WriteLine($"    ReachPoint X={ReachPoint.X} Y={ReachPoint.Y} Z={ReachPoint.Z}");
+            Console.WriteLine($"    Rotation X={Rotation.X} Y={Rotation.Y} Z={Rotation.Z} W={Rotation.W}");
+            Console.WriteLine($"    OuterRange={OuterRange} InnerRange={InnerRange}");
+            Console.WriteLine($"    UmbraAngle={UmbraAngle} PenumbraAngle={PenumbraAngle}");
+            Console.WriteLine($"    AttenuationExponent={AttenuationExponent}=vals14_6 {vals14_6}");
+            Console.WriteLine($"    Color X={Color.X} Y={Color.Y} Z={Color.Z} W={Color.W}");
+            Console.WriteLine($"    Temperature={Temperature} ColorDeflection={ColorDeflection} Lumen={Lumen} vals10={vals10}");
+            Console.WriteLine($"    ShadowUmbraAngle={ShadowUmbraAngle} ShadowPenumbraAngle={ShadowPenumbraAngle} ");
+            Console.WriteLine($"    Dimmer={Dimmer} ShadowBias={ShadowBias} ViewBias={ViewBias}");
+            Console.WriteLine($"    vals11_1={vals11_1} vals11_2={vals11_2} vals11_3={vals11_3}");
+            Console.WriteLine($"    LodRadiusLevel={LodRadiusLevel} vals12_2={vals12_2} vals11_3={vals11_3}");
 
-            if (HasIrradiationPoint)
+            ExtraTransform LightAreaTrasform = new ExtraTransform
             {
-                IrradiationPointScale = new Vector3();
-                IrradiationPointScale.Read(reader);
-                IrradiationPointRotation = new Vector4();
-                IrradiationPointRotation.Read(reader);
-                IrradiationPointTranslation = new Vector3();
-                IrradiationPointTranslation.Read(reader);
+                Scale = new Vector3(),
+                Rotation = new Vector4(),
+                Translation = new Vector3()
+            };
+            if (offsetToLightArea > 0)
+            {
+                LightAreaTrasform.Scale.Read(reader);
+                LightAreaTrasform.Rotation.Read(reader);
+                LightAreaTrasform.Translation.Read(reader);
+                LightArea.Add(LightAreaTrasform);
+                Console.WriteLine($"        LightAreaScale X={LightAreaTrasform.Scale.X} Y={LightAreaTrasform.Scale.Y} Z={LightAreaTrasform.Scale.Z}");
+                Console.WriteLine($"        LightAreaRotation X={LightAreaTrasform.Rotation.X} Y={LightAreaTrasform.Rotation.Y} Z={LightAreaTrasform.Rotation.Z} W={LightAreaTrasform.Rotation.W}");
+                Console.WriteLine($"        LightAreaTranslation X={LightAreaTrasform.Translation.X} Y={LightAreaTrasform.Translation.Y} Z={LightAreaTrasform.Translation.Z}");
             }
-
-            Console.WriteLine("Spotlight entry");
-            Console.WriteLine($"NameHash {LightNameHash}");
-            Console.WriteLine($"HasString {HasString}");
-            Console.WriteLine($"vals4_2 {vals4_2} vals4_3 {vals4_3} vals4_4 {vals4_4}");
-            Console.WriteLine($"Translation {Translation.X} {Translation.Y} {Translation.Z}");
-            Console.WriteLine($"ReachPoint {ReachPoint.X} {ReachPoint.Y} {ReachPoint.Z}");
-            Console.WriteLine($"Rotation {Rotation.X} {Rotation.Y} {Rotation.Z} {Rotation.W}");
-            Console.WriteLine($"OuterRange {OuterRange} InnerRange {InnerRange} UmbraAngle {UmbraAngle} PenumbraAngle {PenumbraAngle} AttenuationExponent {AttenuationExponent} vals14_6 {vals14_6}");
-            Console.WriteLine($"HasLightArea {HasLightArea}");
-            Console.WriteLine($"HasIrradiationPoint {HasIrradiationPoint}");
+            ExtraTransform IrradiationPointTransform = new ExtraTransform
+            {
+                Scale = new Vector3(),
+                Rotation = new Vector4(),
+                Translation = new Vector3()
+            };
+            if (offsetToIrraditationTransform > 0)
+            {
+                IrradiationPointTransform.Scale.Read(reader);
+                IrradiationPointTransform.Rotation.Read(reader);
+                IrradiationPointTransform.Translation.Read(reader);
+                IrradiationPoint.Add(IrradiationPointTransform);
+                Console.WriteLine($"        IrradiationPointScale X={IrradiationPointTransform.Scale.X} Y={IrradiationPointTransform.Scale.Y} Z={IrradiationPointTransform.Scale.Z}");
+                Console.WriteLine($"        IrradiationPointRotation X={IrradiationPointTransform.Rotation.X} Y={IrradiationPointTransform.Rotation.Y} Z={IrradiationPointTransform.Rotation.Z} W={IrradiationPointTransform.Rotation.W}");
+                Console.WriteLine($"        IrradiationPointTranslation X={IrradiationPointTransform.Translation.X} Y={IrradiationPointTransform.Translation.Y} Z={IrradiationPointTransform.Translation.Z}");
+            }
         }
-
         public void Write(BinaryWriter writer)
         {
+            writer.Write(HashName);
+            int offsetToTransforms = 0x78;
+            if (StringName != "")
+            {
+                writer.Write(offsetToTransforms);
+                offsetToTransforms += StringName.Length + 1;
+                if (offsetToTransforms % 0x4 != 0)
+                    offsetToTransforms += (0x4 - offsetToTransforms % 0x4);
+            }
+            else
+                writer.Write(0);
+            writer.Write(vals4_2);
+            writer.Write(vals4_3);
+            writer.Write(vals4_4);
+            if (LightArea.Count > 0)
+                writer.Write(offsetToTransforms-0x10);
+            else
+                writer.Write(0);
+            Translation.Write(writer);
+            ReachPoint.Write(writer);
+            Rotation.Write(writer);
+            writer.Write(Half.GetBytes((Half)OuterRange));
+            writer.Write(Half.GetBytes((Half)InnerRange));
+            writer.Write(Half.GetBytes((Half)UmbraAngle));
+            writer.Write(Half.GetBytes((Half)PenumbraAngle));
+            writer.Write(Half.GetBytes((Half)AttenuationExponent));
+            writer.Write(Half.GetBytes((Half)vals14_6));
+            Color.Write(writer);
+            writer.Write(Half.GetBytes((Half)Temperature));
+            writer.Write(Half.GetBytes((Half)ColorDeflection));
+            writer.Write(Lumen);
+            writer.Write(Half.GetBytes((Half)vals10));
+            writer.Write(Half.GetBytes((Half)ShadowUmbraAngle));
+            writer.Write(Half.GetBytes((Half)ShadowPenumbraAngle));
+            writer.Write(Half.GetBytes((Half)ShadowAttenuationExponent));
+            writer.Write(Half.GetBytes((Half)Dimmer));
+            writer.Write(Half.GetBytes((Half)ShadowBias));
+            writer.Write(Half.GetBytes((Half)ViewBias));
+            writer.Write(Half.GetBytes((Half)vals11_1));
+            writer.Write(Half.GetBytes((Half)vals11_2));
+            writer.Write(Half.GetBytes((Half)vals11_3));
+            writer.Write(LodRadiusLevel);
+            writer.Write(vals12_2);
 
-        }
+            if (IrradiationPoint.Count > 0)
+                writer.Write((offsetToTransforms + 0x28) - 0x74);
+            else
+                writer.Write(0);
 
-        public void ReadJson()
-        {
-        }
+            if (StringName != "")
+            {
+                writer.WriteCString(StringName);
+                writer.WriteZeroes(1);//null byte for readcstring
+                if (writer.BaseStream.Position % 0x4 != 0)
+                    writer.WriteZeroes(0x4 - (int)writer.BaseStream.Position % 0x4);
+            }
+            Console.WriteLine($"Spotlight entry NameHash={HashName} LightName='{StringName}'");
+            Console.WriteLine($"    vals4_2={vals4_2} vals4_3={vals4_3} vals4_4={vals4_4}");
+            Console.WriteLine($"    Translation X={Translation.X} Y={Translation.Y} Z={Translation.Z}");
+            Console.WriteLine($"    ReachPoint X={ReachPoint.X} Y={ReachPoint.Y} Z={ReachPoint.Z}");
+            Console.WriteLine($"    Rotation X={Rotation.X} Y={Rotation.Y} Z={Rotation.Z} W={Rotation.W}");
+            Console.WriteLine($"    OuterRange={OuterRange} InnerRange={InnerRange}");
+            Console.WriteLine($"    UmbraAngle={UmbraAngle} PenumbraAngle={PenumbraAngle}");
+            Console.WriteLine($"    AttenuationExponent={AttenuationExponent}=vals14_6 {vals14_6}");
+            Console.WriteLine($"    Color X={Color.X} Y={Color.Y} Z={Color.Z} W={Color.W}");
+            Console.WriteLine($"    Temperature={Temperature} ColorDeflection={ColorDeflection} Lumen={Lumen} vals10={vals10}");
+            Console.WriteLine($"    ShadowUmbraAngle={ShadowUmbraAngle} ShadowPenumbraAngle={ShadowPenumbraAngle} ");
+            Console.WriteLine($"    Dimmer={Dimmer} ShadowBias={ShadowBias} ViewBias={ViewBias}");
+            Console.WriteLine($"    vals11_1={vals11_1} vals11_2={vals11_2} vals11_3={vals11_3}");
+            Console.WriteLine($"    LodRadiusLevel={LodRadiusLevel} vals12_2={vals12_2} vals11_3={vals11_3}");
 
-        public void WriteJson()
-        {
+            foreach (var lightArea in LightArea)
+            {
+                lightArea.Scale.Write(writer);
+                lightArea.Rotation.Write(writer);
+                lightArea.Translation.Write(writer);
+                Console.WriteLine($"        LightAreaScale X={lightArea.Scale.X} Y={lightArea.Scale.Y} Z={lightArea.Scale.Z}");
+                Console.WriteLine($"        LightAreaRotation X={lightArea.Rotation.X} Y={lightArea.Rotation.Y} Z={lightArea.Rotation.Z} W={lightArea.Rotation.W}");
+                Console.WriteLine($"        LightAreaTranslation X={lightArea.Translation.X} Y={lightArea.Translation.Y} Z={lightArea.Translation.Z}");
+            }
+
+            foreach (var lightArea in IrradiationPoint)
+            {
+                lightArea.Scale.Write(writer);
+                lightArea.Rotation.Write(writer);
+                lightArea.Translation.Write(writer);
+                Console.WriteLine($"        IrradiationPointScale X={lightArea.Scale.X} Y={lightArea.Scale.Y} Z={lightArea.Scale.Z}");
+                Console.WriteLine($"        IrradiationPointRotation X={lightArea.Rotation.X} Y={lightArea.Rotation.Y} Z={lightArea.Rotation.Z} W={lightArea.Rotation.W}");
+                Console.WriteLine($"        IrradiationPointTranslation X={lightArea.Translation.X} Y={lightArea.Translation.Y} Z={lightArea.Translation.Z}");
+            }
         }
     }
 }

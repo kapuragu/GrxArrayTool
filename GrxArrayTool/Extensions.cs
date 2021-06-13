@@ -27,5 +27,17 @@ namespace GrxArrayTool
 
             return new string(chars.ToArray());
         }
+        public static void WriteCString(this BinaryWriter writer, string iString)
+        {
+            char[] stringChars = iString.ToCharArray();
+            foreach (var chara in stringChars)
+                writer.Write(chara);
+        }
+        public static void WriteZeroes(this BinaryWriter writer, int count)
+        {
+            byte[] array = new byte[count];
+
+            writer.Write(array);
+        } //WriteZeroes
     }
 }

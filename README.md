@@ -1,5 +1,4 @@
 # GrxArrayTool
-========
 A tool for decompiling and compiling MGSV .grxla and .grxoc GrxLightArray files, created using youarebritish's LbaTool source code.
 https://github.com/youarebritish/LbaTool
 

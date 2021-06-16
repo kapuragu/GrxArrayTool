@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace GrxArrayTool
@@ -16,7 +15,7 @@ namespace GrxArrayTool
             public short Size { get; set; }
         }
         public Face[] Faces { get; set; }
-        public void Read(BinaryReader reader, Dictionary<uint, string> hashLookupTable, HashIdentifiedDelegate hashIdentifiedCallback)
+        public void Read(BinaryReader reader)
         {
             valsOcc_1 = reader.ReadUInt32();
             reader.BaseStream.Position += 4;

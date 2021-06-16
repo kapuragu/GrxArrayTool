@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using Newtonsoft.Json;
 
 namespace GrxArrayTool
 {
-    [DebuggerDisplay("x = {X}, y = {Y}, z = {Z}")]
     public class HalfVector4
     {
         public float X { get; set; }

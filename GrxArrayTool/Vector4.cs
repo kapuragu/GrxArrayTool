@@ -1,10 +1,7 @@
-﻿using System.Diagnostics;
-using System.Globalization;
-using System.IO;
+﻿using System.IO;
 
 namespace GrxArrayTool
 {
-    [DebuggerDisplay("x = {X}, y = {Y}, z = {Z}, w = {W}")]
     public class Vector4
     {
         public float X { get; set; }

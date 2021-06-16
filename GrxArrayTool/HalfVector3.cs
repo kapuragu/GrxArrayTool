@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 
 namespace GrxArrayTool
 {
-    [DebuggerDisplay("x = {X}, y = {Y}, z = {Z}")]
     public class HalfVector3
     {
         public float X { get; set; }

@@ -19,12 +19,6 @@ namespace GrxArrayTool
         LightProbe00 = 0x30305045, //"EP00" but actually the light probes
         Occluder00 = 0x3030434F, //"OC00".grxoc
     }
-    public struct ExtraTransform
-    {
-        public Vector3 Scale { get; set; }
-        public Vector4 Rotation { get; set; }
-        public Vector3 Translation { get; set; }
-    }
     public class GrxArrayFile
     {
         public ulong DataSetNameHash { get; set; }
@@ -36,7 +30,7 @@ namespace GrxArrayTool
         /// <summary>
         /// Reads and populates data from a binary lba file.
         /// </summary>
-        public void Read(BinaryReader reader, HashManager hashManager)
+        public void Read(BinaryReader reader)
         {
             // Read header
             uint signature = reader.ReadUInt32(); //FGxL or FGxO
@@ -49,11 +43,11 @@ namespace GrxArrayTool
 
             reader.BaseStream.Position += 12;
 
-            uint entryTypeDataSet = reader.ReadUInt32();
-            reader.BaseStream.Position += 4; //nil
+            reader.ReadUInt32(); //Entry type CM00/header dataset entry
+            reader.BaseStream.Position += 4; //0
             DataSetNameHash = reader.ReadUInt64(); //Doesn't look like the PathCode64 of the .fox2?
             reader.BaseStream.Position += 8; //uint offsetToArray uint n2
-            DataSetPath = reader.ReadCString();
+            DataSetPath = reader.ReadCString(); //.fox2 path
             if (reader.BaseStream.Position % 0x4 != 0)
                 reader.BaseStream.Position += 0x4 - reader.BaseStream.Position % 0x4;
 
@@ -64,8 +58,8 @@ namespace GrxArrayTool
             // Read locators
             while (reader.BaseStream.Position!=reader.BaseStream.Length-8) //Last 8 bytes is the terminator entry
             {
-                uint entryType = reader.ReadUInt32();
-                reader.BaseStream.Position += 4; //entrySize
+                uint entryType = reader.ReadUInt32(); //Entry type
+                reader.BaseStream.Position += 4; //Entry Size
                 Console.WriteLine($"entryType {(LightType)entryType}");
                 switch (entryType)
                 {
@@ -77,31 +71,31 @@ namespace GrxArrayTool
                     case (uint)LightType.DirectLight00:
                         Console.WriteLine("DL00 entry type is unknown !!!");
                         throw new ArgumentOutOfRangeException();
-                    case (uint)LightType.PointLight01:
-                    case (uint)LightType.PointLight02:
-                    case (uint)LightType.PointLight03:
+                    case (uint)LightType.PointLight01: //01 is mentioned in the exe but never seen in the wild
+                    case (uint)LightType.PointLight02: //02 is used in GZ, in structure seems identical to 03
+                    case (uint)LightType.PointLight03: //03 is TPP+
                         LightTypePointLight pl = new LightTypePointLight();
-                        pl.Read(reader, hashManager.StrCode32LookupTable, hashManager.OnHashIdentified);
+                        pl.Read(reader);
                         PointLights.Add(pl);
                         break;
-                    case (uint)LightType.SpotLight01:
+                    case (uint)LightType.SpotLight01: //Same as PointLight
                     case (uint)LightType.SpotLight02:
                     case (uint)LightType.SpotLight03:
                         LightTypeSpotLight sl = new LightTypeSpotLight();
-                        sl.Read(reader, hashManager.StrCode32LookupTable, hashManager.OnHashIdentified);
+                        sl.Read(reader);
                         SpotLights.Add(sl);
                         break;
-                    case (uint)LightType.UnknownLP00:
+                    case (uint)LightType.UnknownLP00: //Mentioned in exe but never seen in the wild
                         Console.WriteLine("LP00 entry type is unknown !!!");
                         throw new ArgumentOutOfRangeException();
-                    case (uint)LightType.LightProbe00:
+                    case (uint)LightType.LightProbe00: 
                         LightTypeLightProbe ep = new LightTypeLightProbe();
-                        ep.Read(reader, hashManager.StrCode32LookupTable, hashManager.OnHashIdentified);
+                        ep.Read(reader);
                         LightProbes.Add(ep);
                         break;
                     case (uint)LightType.Occluder00:
                         LightTypeOccluder oc = new LightTypeOccluder();
-                        oc.Read(reader, hashManager.StrCode32LookupTable, hashManager.OnHashIdentified);
+                        oc.Read(reader);
                         Occluders.Add(oc);
                         break;
                     default:
@@ -130,19 +124,18 @@ namespace GrxArrayTool
             writer.Write(1);
 
             // write dataset entry
-            writer.Write(808471875);//CM00
+            writer.WriteCString("CM00");//CM00
             //calculate entry size
             int dataSetPathLength = (DataSetPath.Length + 1);
             if (dataSetPathLength % 0x4 != 0)
-                dataSetPathLength += 0x4 - dataSetPathLength % 0x4;
+                dataSetPathLength += 0x4 - dataSetPathLength % 0x4; //align stream to 4 bytes based on string's length
             writer.Write(24 + dataSetPathLength); // entry size
             writer.Write(DataSetNameHash); //not actually the hash of the dataset path?
-            writer.Write(8);
+            writer.Write(8); //unknown
             writer.WriteZeroes(4);
 
             // write dataset string
-            writer.WriteCString(DataSetPath);
-            writer.WriteZeroes(1);//null byte for readcstring
+            writer.WriteCString(DataSetPath); writer.WriteZeroes(1);
             if (writer.BaseStream.Position % 0x4 != 0)
                 writer.WriteZeroes(0x4 - (int)writer.BaseStream.Position % 0x4);
 
@@ -153,7 +146,7 @@ namespace GrxArrayTool
                 {
                     writer.WriteCString("PL03");
                     int entryLength = 0x60;
-                    if (light.StringName != "")
+                    if (light.StringName != string.Empty)
                         entryLength += light.StringName.Length + 1;
                     if (entryLength % 0x4 != 0)
                         entryLength += (0x4 - entryLength % 0x4);
@@ -168,7 +161,7 @@ namespace GrxArrayTool
                 {
                     writer.WriteCString("SL03");
                     int entryLength = 0x88;
-                    if (light.StringName !="")
+                    if (light.StringName != string.Empty)
                         entryLength += light.StringName.Length + 1;
                     if (entryLength % 0x4 != 0)
                         entryLength += (0x4 - entryLength % 0x4);
@@ -185,7 +178,7 @@ namespace GrxArrayTool
                 {
                     writer.WriteCString("EP00");
                     int entryLength = 0x68;
-                    if (light.StringName != "")
+                    if (light.StringName != string.Empty)
                         entryLength += light.StringName.Length + 1;
                     if (entryLength % 0x4 != 0)
                         entryLength += (0x4 - entryLength % 0x4); 
@@ -199,7 +192,6 @@ namespace GrxArrayTool
                     writer.Write(0x1C + (light.Faces.Length * 0x8) + (light.Node.Length * 0x10)); //entry size
                     light.Write(writer);
                 }
-
             //write footer terminator entry
             writer.WriteZeroes(4);
             writer.Write(8);

@@ -10,10 +10,10 @@ namespace GrxArrayTool
         public uint LightFlags { get; set; } //Bitfield: 0x1 is Enable
         public uint vals4_4 { get; set; }
         public float InnerScaleXPositive { get; set; } //To-do: figure out which one is positive and which is negative
-        public float InnerScaleXNegative { get; set; }
         public float InnerScaleYPositive { get; set; }
-        public float InnerScaleYNegative { get; set; }
         public float InnerScaleZPositive { get; set; }
+        public float InnerScaleXNegative { get; set; }
+        public float InnerScaleYNegative { get; set; }
         public float InnerScaleZNegative { get; set; }
         public Vector3 Scale { get; set; }
         public Vector4 Rotation { get; set; }
@@ -34,10 +34,10 @@ namespace GrxArrayTool
             LightFlags = reader.ReadUInt32();
             vals4_4 = reader.ReadUInt32();
             InnerScaleXPositive = Half.ToHalf(reader.ReadUInt16());
-            InnerScaleXNegative = Half.ToHalf(reader.ReadUInt16());
             InnerScaleYPositive = Half.ToHalf(reader.ReadUInt16());
-            InnerScaleYNegative = Half.ToHalf(reader.ReadUInt16());
             InnerScaleZPositive = Half.ToHalf(reader.ReadUInt16());
+            InnerScaleXNegative = Half.ToHalf(reader.ReadUInt16());
+            InnerScaleYNegative = Half.ToHalf(reader.ReadUInt16());
             InnerScaleZNegative = Half.ToHalf(reader.ReadUInt16());
 
             Scale = new Vector3();
@@ -83,9 +83,9 @@ namespace GrxArrayTool
             writer.Write(LightFlags);
             writer.Write(vals4_4);
 
-            writer.Write(Half.GetBytes((Half)InnerScaleXPositive)); writer.Write(Half.GetBytes((Half)InnerScaleXNegative));
-            writer.Write(Half.GetBytes((Half)InnerScaleYPositive)); writer.Write(Half.GetBytes((Half)InnerScaleYNegative));
-            writer.Write(Half.GetBytes((Half)InnerScaleZPositive)); writer.Write(Half.GetBytes((Half)InnerScaleZNegative));
+            writer.Write(Half.GetBytes((Half)InnerScaleXPositive)); writer.Write(Half.GetBytes((Half)InnerScaleYPositive));
+            writer.Write(Half.GetBytes((Half)InnerScaleZPositive)); writer.Write(Half.GetBytes((Half)InnerScaleXNegative));
+            writer.Write(Half.GetBytes((Half)InnerScaleYNegative)); writer.Write(Half.GetBytes((Half)InnerScaleZNegative));
 
             Scale.Write(writer);
             Rotation.Write(writer);
@@ -112,9 +112,9 @@ namespace GrxArrayTool
         {
             Console.WriteLine($"Light Probe entry StrCode64={HashName} StringName='{StringName}'");
             Console.WriteLine($"    LightProbeIndex={SphericalHaromincsDataIndex} vals4_2={vals4_2} LightFlags={LightFlags} vals4_4={vals4_4}");
-            Console.WriteLine($"    InnerScaleXPositive={InnerScaleXPositive} InnerScaleXNegative={InnerScaleXNegative}");
-            Console.WriteLine($"    InnerScaleYPositive={InnerScaleYPositive} InnerScaleYNegative={InnerScaleYNegative}");
-            Console.WriteLine($"    InnerScaleZPositive={InnerScaleZPositive} InnerScaleZNegative={InnerScaleZNegative}");
+            Console.WriteLine($"    InnerScaleXPositive={InnerScaleXPositive} InnerScaleXNegative={InnerScaleYPositive}");
+            Console.WriteLine($"    InnerScaleYPositive={InnerScaleZPositive} InnerScaleYNegative={InnerScaleXNegative}");
+            Console.WriteLine($"    InnerScaleZPositive={InnerScaleYNegative} InnerScaleZNegative={InnerScaleZNegative}");
             Console.WriteLine($"    Scale X={Scale.X} Y={Scale.Y} Z={Scale.Z}");
             Console.WriteLine($"    Rotation X={Rotation.X} Y={Rotation.Y} Z={Rotation.Z} W={Rotation.W}");
             Console.WriteLine($"    Translation X={Translation.X} Y={Translation.Y} Z={Translation.Z}");

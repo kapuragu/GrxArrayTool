@@ -8,32 +8,32 @@ namespace GrxArrayTool
     {
         public ulong HashName { get; set; }
         public string StringName { get; set; }
-        public uint vals4_2 { get; set; } // Different in GZ
+        public uint Flags1 { get; set; } // Different in GZ
         public uint LightFlags { get; set; }
-        public uint vals4_4 { get; set; } // Sometimes different in GZ?
+        public uint Flags2 { get; set; } // Sometimes different in GZ?
         public Vector3 Translation { get; set; }
         public HalfVector3 ReachPoint { get; set; }
         public HalfVector4 Color { get; set; }
         public float Temperature { get; set; }
         public float ColorDeflection { get; set; }
         public float Lumen { get; set; }
-        public float vals5_3 { get; set; }
-        public float vals5_4 { get; set; }
-        public float vals3_1 { get; set; }
-        public float vals3_2 { get; set; }
-        public float vals6 { get; set; }
-        public float vals13 { get; set; }
-        public uint vals7_1 { get; set; }
-        public uint vals7_2 { get; set; }
-        public List<ExtraTransform> LightArea = new List<ExtraTransform>();
-        public List<ExtraTransform> IrradiationPoint = new List<ExtraTransform>();
+        public float LightSize { get; set; }
+        public float Dimmer { get; set; }
+        public float ShadowBias { get; set; }
+        public float LodFarSize { get; set; }
+        public float LodNearSize { get; set; }
+        public float LodShadowDrawRate { get; set; }
+        public uint LodRadiusLevel { get; set; }
+        public uint LodFadeType { get; set; }
+        public ExtraTransform LightArea { get; set; }
+        public ExtraTransform IrradiationPoint { get; set; }
         public void Read(BinaryReader reader)
         {
             HashName = reader.ReadUInt64(); //Doesn't look like the PathCode64 of the .fox2?
             uint offsetToString = reader.ReadUInt32();
-            vals4_2 = reader.ReadUInt32();
+            Flags1 = reader.ReadUInt32();
             LightFlags = reader.ReadUInt32();
-            vals4_4 = reader.ReadUInt32();
+            Flags2 = reader.ReadUInt32();
             uint offsetToLightArea = reader.ReadUInt32();
 
             Translation = new Vector3();
@@ -48,14 +48,14 @@ namespace GrxArrayTool
             Temperature = Half.ToHalf(reader.ReadUInt16());
             ColorDeflection = reader.ReadSingle();
             Lumen = reader.ReadSingle();
-            vals5_3 = Half.ToHalf(reader.ReadUInt16());
-            vals5_4 = Half.ToHalf(reader.ReadUInt16());
-            vals3_1 = Half.ToHalf(reader.ReadUInt16());
-            vals3_2 = Half.ToHalf(reader.ReadUInt16());
-            vals6 = Half.ToHalf(reader.ReadUInt16());
-            vals13 = Half.ToHalf(reader.ReadUInt16());
-            vals7_1 = reader.ReadUInt32();
-            vals7_2 = reader.ReadUInt32();
+            LightSize = Half.ToHalf(reader.ReadUInt16());
+            Dimmer = Half.ToHalf(reader.ReadUInt16());
+            ShadowBias = Half.ToHalf(reader.ReadUInt16());
+            LodFarSize = Half.ToHalf(reader.ReadUInt16());
+            LodNearSize = Half.ToHalf(reader.ReadUInt16());
+            LodShadowDrawRate = Half.ToHalf(reader.ReadUInt16());
+            LodRadiusLevel = reader.ReadUInt32();
+            LodFadeType = reader.ReadUInt32();
             uint offsetToIrraditationTransform = reader.ReadUInt32();
 
             StringName = string.Empty;
@@ -68,27 +68,29 @@ namespace GrxArrayTool
             }
 
             Console.WriteLine($"Point light entry name: StrCode64={HashName} StringName='{StringName}'");
-            Console.WriteLine($"    vals4_2={vals4_2} LightFlags={LightFlags} vals4_4={vals4_4}");
+            Console.WriteLine($"    vals4_2={Flags1} LightFlags={LightFlags} vals4_4={Flags2}");
             Console.WriteLine($"    Translation X={Translation.X} Y={Translation.Y} Z={Translation.Z}");
             Console.WriteLine($"    ReachPoint X={ReachPoint.X} Y={ReachPoint.Y} Z={ReachPoint.Z}");
             Console.WriteLine($"    Color X={Color.X} Y={Color.Y} Z={Color.Z} W={Color.W}");
             Console.WriteLine($"    Temperature={Temperature} ColorDeflection={ColorDeflection} Lumen={Lumen}");
-            Console.WriteLine($"    vals5_3={vals5_3} vals5_4={vals5_4} vals3_1={vals3_1}");
-            Console.WriteLine($"    vals3_2={vals3_2} vals6={vals6} vals13={vals13}");
-            Console.WriteLine($"    vals7_1={vals7_1} vals7_2={vals7_2}");
+            Console.WriteLine($"    vals5_3={LightSize} vals5_4={Dimmer} vals3_1={ShadowBias}");
+            Console.WriteLine($"    vals3_2={LodFarSize} vals6={LodNearSize} vals13={LodShadowDrawRate}");
+            Console.WriteLine($"    vals7_1={LodRadiusLevel} vals7_2={LodFadeType}");
 
-            ExtraTransform LightAreaTrasform = new ExtraTransform();
             if (offsetToLightArea > 0)
             {
-                LightAreaTrasform.Read(reader);
-                LightArea.Add(LightAreaTrasform);
+                LightArea = new ExtraTransform();
+                LightArea.Read(reader);
             }
-            ExtraTransform IrradiationPointTransform = new ExtraTransform();
+            else
+                LightArea = null;
             if (offsetToIrraditationTransform > 0)
             {
-                IrradiationPointTransform.Read(reader);
-                IrradiationPoint.Add(IrradiationPointTransform);
+                IrradiationPoint = new ExtraTransform();
+                IrradiationPoint.Read(reader);
             }
+            else
+                IrradiationPoint = null;
 
             Log();
         }
@@ -108,10 +110,10 @@ namespace GrxArrayTool
                 writer.Write(HashName);
                 writer.Write(0);
             }
-            writer.Write(vals4_2);
+            writer.Write(Flags1);
             writer.Write(LightFlags);
-            writer.Write(vals4_4);
-            if (LightArea.Count > 0)
+            writer.Write(Flags2);
+            if (LightArea!=null)
                 writer.Write(offsetToTransforms-0x10);
             else
                 writer.Write(0);
@@ -122,16 +124,16 @@ namespace GrxArrayTool
             writer.Write(Half.GetBytes((Half)Temperature));
             writer.Write(ColorDeflection);
             writer.Write(Lumen);
-            writer.Write(Half.GetBytes((Half)vals5_3));
-            writer.Write(Half.GetBytes((Half)vals5_4));
-            writer.Write(Half.GetBytes((Half)vals3_1));
-            writer.Write(Half.GetBytes((Half)vals3_2));
-            writer.Write(Half.GetBytes((Half)vals6));
-            writer.Write(Half.GetBytes((Half)vals13));
-            writer.Write(vals7_1);
-            writer.Write(vals7_2);
+            writer.Write(Half.GetBytes((Half)LightSize));
+            writer.Write(Half.GetBytes((Half)Dimmer));
+            writer.Write(Half.GetBytes((Half)ShadowBias));
+            writer.Write(Half.GetBytes((Half)LodFarSize));
+            writer.Write(Half.GetBytes((Half)LodNearSize));
+            writer.Write(Half.GetBytes((Half)LodShadowDrawRate));
+            writer.Write(LodRadiusLevel);
+            writer.Write(LodFadeType);
 
-            if (IrradiationPoint.Count > 0)
+            if (IrradiationPoint!=null)
                 writer.Write((offsetToTransforms + 0x28) - 0x4C);
             else
                 writer.Write(0);
@@ -143,38 +145,34 @@ namespace GrxArrayTool
                     writer.WriteZeroes(0x4 - (int)writer.BaseStream.Position % 0x4);
             }
 
-            foreach (var lightArea in LightArea)
-            {
-                lightArea.Write(writer);
-            }
+            if (LightArea!=null)
+                LightArea.Write(writer);
 
-            foreach (var lightArea in IrradiationPoint)
-            {
-                lightArea.Write(writer);
-            }
+            if (IrradiationPoint!=null)
+                IrradiationPoint.Write(writer);
 
             Log();
         }
         public void Log()
         {
             Console.WriteLine($"Point light entry StrCode64={HashName} StringName='{StringName}'");
-            Console.WriteLine($"    vals4_2={vals4_2} LightFlags={LightFlags} vals4_4={vals4_4}");
+            Console.WriteLine($"    vals4_2={Flags1} LightFlags={LightFlags} vals4_4={Flags2}");
             Console.WriteLine($"    Translation X={Translation.X} Y={Translation.Y} Z={Translation.Z}");
             Console.WriteLine($"    ReachPoint X={ReachPoint.X} Y={ReachPoint.Y} Z={ReachPoint.Z}");
             Console.WriteLine($"    Color X={Color.X} Y={Color.Y} Z={Color.Z} W={Color.W}");
             Console.WriteLine($"    Temperature={Temperature} ColorDeflection={ColorDeflection} Lumen={Lumen}");
-            Console.WriteLine($"    vals5_3={vals5_3} vals5_4={vals5_4} vals3_1={vals3_1}");
-            Console.WriteLine($"    vals3_2={vals3_2} vals6={vals6} vals13={vals13}");
-            Console.WriteLine($"    vals7_1={vals7_1} vals7_2={vals7_2}");
-            foreach (var lightArea in LightArea)
+            Console.WriteLine($"    vals5_3={LightSize} vals5_4={Dimmer} vals3_1={ShadowBias}");
+            Console.WriteLine($"    vals3_2={LodFarSize} vals6={LodNearSize} vals13={LodShadowDrawRate}");
+            Console.WriteLine($"    vals7_1={LodRadiusLevel} vals7_2={LodFadeType}");
+            if (LightArea != null)
             {
                 Console.WriteLine("        LightArea");
-                lightArea.Log();
+                LightArea.Log();
             }
-            foreach (var irradiationPoint in IrradiationPoint)
+            if (IrradiationPoint != null)
             {
                 Console.WriteLine("        IrradiationPoint");
-                irradiationPoint.Log();
+                IrradiationPoint.Log();
             }
         }
     }

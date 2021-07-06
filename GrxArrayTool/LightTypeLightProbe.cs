@@ -6,9 +6,9 @@ namespace GrxArrayTool
     public class LightTypeLightProbe
     {
         public ulong HashName { get; set; }
-        public uint vals4_2 { get; set; }
+        public uint Flags1 { get; set; }
         public uint LightFlags { get; set; } //Bitfield: 0x1 is Enable
-        public uint vals4_4 { get; set; }
+        public uint Flags2 { get; set; }
         public float InnerScaleXPositive { get; set; } //To-do: figure out which one is positive and which is negative
         public float InnerScaleYPositive { get; set; }
         public float InnerScaleZPositive { get; set; }
@@ -18,21 +18,21 @@ namespace GrxArrayTool
         public Vector3 Scale { get; set; }
         public Vector4 Rotation { get; set; }
         public Vector3 Translation { get; set; }
-        public float vals16 { get; set; } // translation's w?
+        public float Exposure { get; set; } // translation's w?
         public short Priority { get; set; }
         public short ShapeType { get; set; } // shapeType? 0 - square, 1 - triangular prism, 2 - semi-cylindiral, 3 - half-square
         public short RelatedLightIndex { get; set; } // relatedLights index
-        public ushort SphericalHaromincsDataIndex { get; set; }
-        public float LightSize { get; set; } // most time is 1
+        public ushort SHDataIndex { get; set; }
+        public float OcclusionModeOpenRate { get; set; } // most time is 1
         public float u5 { get; set; } //most time is 0
         public string StringName { get; set; }
         public void Read(BinaryReader reader)
         {
             HashName = reader.ReadUInt64();
             uint offsetToString = reader.ReadUInt32();
-            vals4_2 = reader.ReadUInt32();
+            Flags1 = reader.ReadUInt32();
             LightFlags = reader.ReadUInt32();
-            vals4_4 = reader.ReadUInt32();
+            Flags2 = reader.ReadUInt32();
             InnerScaleXPositive = Half.ToHalf(reader.ReadUInt16());
             InnerScaleYPositive = Half.ToHalf(reader.ReadUInt16());
             InnerScaleZPositive = Half.ToHalf(reader.ReadUInt16());
@@ -49,12 +49,12 @@ namespace GrxArrayTool
             Translation = new Vector3();
             Translation.Read(reader);
 
-            vals16 = reader.ReadSingle();
+            Exposure = reader.ReadSingle();
             Priority = reader.ReadInt16();
             ShapeType = reader.ReadInt16();
             RelatedLightIndex = reader.ReadInt16(); // related light id (TppLightProbeArray)
-            SphericalHaromincsDataIndex = reader.ReadUInt16(); // probe index used by shDatas and drawRejectionLevels (TppLightProbeArray)
-            LightSize = reader.ReadSingle();
+            SHDataIndex = reader.ReadUInt16(); // probe index used by shDatas and drawRejectionLevels (TppLightProbeArray)
+            OcclusionModeOpenRate = reader.ReadSingle();
             u5 = reader.ReadSingle();
 
             StringName = string.Empty;
@@ -79,9 +79,9 @@ namespace GrxArrayTool
                 writer.Write(HashName);
                 writer.Write(0);
             }
-            writer.Write(vals4_2);
+            writer.Write(Flags1);
             writer.Write(LightFlags);
-            writer.Write(vals4_4);
+            writer.Write(Flags2);
 
             writer.Write(Half.GetBytes((Half)InnerScaleXPositive)); writer.Write(Half.GetBytes((Half)InnerScaleYPositive));
             writer.Write(Half.GetBytes((Half)InnerScaleZPositive)); writer.Write(Half.GetBytes((Half)InnerScaleXNegative));
@@ -91,12 +91,12 @@ namespace GrxArrayTool
             Rotation.Write(writer);
             Translation.Write(writer);
 
-            writer.Write(vals16);
+            writer.Write(Exposure);
             writer.Write(Priority);
             writer.Write(ShapeType);
             writer.Write(RelatedLightIndex);
-            writer.Write(SphericalHaromincsDataIndex);
-            writer.Write(LightSize);
+            writer.Write(SHDataIndex);
+            writer.Write(OcclusionModeOpenRate);
             writer.Write(u5);
             if (StringName != string.Empty)
             {
@@ -111,15 +111,15 @@ namespace GrxArrayTool
         public void Log()
         {
             Console.WriteLine($"Light Probe entry StrCode64={HashName} StringName='{StringName}'");
-            Console.WriteLine($"    LightProbeIndex={SphericalHaromincsDataIndex} vals4_2={vals4_2} LightFlags={LightFlags} vals4_4={vals4_4}");
+            Console.WriteLine($"    LightProbeIndex={SHDataIndex} vals4_2={Flags1} LightFlags={LightFlags} vals4_4={Flags2}");
             Console.WriteLine($"    InnerScaleXPositive={InnerScaleXPositive} InnerScaleXNegative={InnerScaleYPositive}");
             Console.WriteLine($"    InnerScaleYPositive={InnerScaleZPositive} InnerScaleYNegative={InnerScaleXNegative}");
             Console.WriteLine($"    InnerScaleZPositive={InnerScaleYNegative} InnerScaleZNegative={InnerScaleZNegative}");
             Console.WriteLine($"    Scale X={Scale.X} Y={Scale.Y} Z={Scale.Z}");
             Console.WriteLine($"    Rotation X={Rotation.X} Y={Rotation.Y} Z={Rotation.Z} W={Rotation.W}");
             Console.WriteLine($"    Translation X={Translation.X} Y={Translation.Y} Z={Translation.Z}");
-            Console.WriteLine($"    vals16={vals16} Priority={Priority} ShapeType={ShapeType} RelatedLightIndex={RelatedLightIndex}");
-            Console.WriteLine($"    LightSize={LightSize} u5={u5}");
+            Console.WriteLine($"    vals16={Exposure} Priority={Priority} ShapeType={ShapeType} RelatedLightIndex={RelatedLightIndex}");
+            Console.WriteLine($"    LightSize={OcclusionModeOpenRate} u5={u5}");
         }
     }
 }
